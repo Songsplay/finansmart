@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanSmart - Gestão Financeira Completa</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js CDN para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 h-full flex flex-col font-sans antialiased transition-colors duration-200">
+
+    <!-- Header / Navbar -->
+    <header class="bg-indigo-700 dark:bg-slate-900 shadow-md sticky top-0 z-50 border-b border-indigo-600 dark:border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 dark:bg-indigo-600/30 p-2 rounded-xl border border-indigo-500/40 shadow-inner">
+                        <i class="fa-solid fa-wallet text-2xl text-indigo-100 dark:text-indigo-400"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight text-white">FinanSmart</h1>
+                        <p class="text-xs text-indigo-200 dark:text-slate-400">Controle, Metas e Gestão de Categorias</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center flex-wrap gap-2 w-full sm:w-auto justify-end">
+                <!-- Filtro de Mês e Ano -->
+                <div class="flex items-center bg-indigo-800/80 dark:bg-slate-800 rounded-xl px-3 py-1.5 border border-indigo-600 dark:border-slate-700 shadow-sm">
+                    <i class="fa-solid fa-calendar-days text-indigo-200 dark:text-slate-400 mr-2 text-sm"></i>
+                    <input type="month" id="filtro-mes" onchange="mudarFiltroMes()" 
+                        class="bg-transparent text-white dark:text-slate-200 text-xs sm:text-sm font-medium focus:outline-none cursor-pointer">
+                </div>
+
+                <!-- Botão Gerenciar Categorias -->
+                <button onclick="abrirModalCategorias()" class="bg-indigo-800 hover:bg-indigo-900 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-100 dark:text-slate-200 font-medium px-3 py-2 rounded-lg transition border border-indigo-600 dark:border-slate-700 shadow-sm flex items-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-tags"></i> <span class="hidden md:inline">Categorias</span>
+                </button>
+
+                <!-- Botão Exportar Backup -->
+                <button onclick="exportarBackup()" class="bg-indigo-800 hover:bg-indigo-900 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-100 dark:text-slate-200 font-medium px-3 py-2 rounded-lg transition border border-indigo-600 dark:border-slate-700 shadow-sm flex items-center gap-1.5 text-xs" title="Baixar Backup dos Dados">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> <span class="hidden md:inline">Exportar</span>
+                </button>
+
+                <!-- Botão Importar Backup (Invisível acionado pelo input file) -->
+                <input type="file" id="input-importar" accept=".json" class="hidden" onchange="importarBackup(event)">
+                <button onclick="document.getElementById('input-importar').click()" class="bg-indigo-800 hover:bg-indigo-900 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-100 dark:text-slate-200 font-medium px-3 py-2 rounded-lg transition border border-indigo-600 dark:border-slate-700 shadow-sm flex items-center gap-1.5 text-xs" title="Restaurar Dados de Backup">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> <span class="hidden md:inline">Importar</span>
+                </button>
+
+                <!-- Botão de Tema (Dark/Light) -->
+                <button onclick="alternarTema()" class="bg-indigo-800 hover:bg-indigo-900 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-100 dark:text-slate-200 font-medium p-2 rounded-lg transition border border-indigo-600 dark:border-slate-700 shadow-sm flex items-center justify-center w-8 h-8" title="Alternar Tema">
+                    <i id="icone-tema" class="fa-solid fa-moon text-xs"></i>
+                </button>
+                
+                <!-- Botão Limpar Dados -->
+                <button onclick="limparDados()" class="text-xs bg-indigo-800 hover:bg-indigo-900 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-100 dark:text-slate-200 font-medium px-3 py-2 rounded-lg transition border border-indigo-600 dark:border-slate-700 shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-trash-can"></i> <span class="hidden md:inline">Limpar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        
+        <!-- Alerta de feedback personalizado -->
+        <div id="custom-toast" class="hidden fixed bottom-5 right-5 z-50 bg-slate-900 dark:bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center space-x-3 transition-all duration-300 transform translate-y-10 opacity-0">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span id="toast-message" class="text-sm font-medium">Ação realizada com sucesso!</span>
+        </div>
+
+        <!-- Modal de Gerenciamento de Categorias -->
+        <div id="modal-categorias" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in zoom-in duration-200">
+                <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-tags text-indigo-600 dark:text-indigo-400"></i> Gerenciar Categorias Personalizadas
+                    </h3>
+                    <button onclick="fecharModalCategorias()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-2">Receitas Personalizadas</span>
+                        <div id="lista-cats-custom-receita" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                            <!-- Injetado por JS -->
+                        </div>
+                    </div>
+
+                    <div>
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-2">Despesas Personalizadas</span>
+                        <div id="lista-cats-custom-despesa" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                            <!-- Injetado por JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                    <button onclick="fecharModalCategorias()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-xl text-sm transition">
+                        Concluído
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel de Resumo / Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <!-- Saldo Geral -->
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between transition-colors">
+                <div class="absolute right-4 top-4 text-indigo-100 bg-indigo-50 dark:bg-indigo-950/50 p-3 rounded-2xl">
+                    <i class="fa-solid fa-scale-balanced text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                </div>
+                <div>
+                    <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Saldo Geral (Mês)</span>
+                    <h2 id="saldo-total" class="text-2xl font-extrabold text-slate-900 dark:text-white mt-2">R$ 0,00</h2>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    <i class="fa-solid fa-circle-info mr-1 text-indigo-500"></i> Entradas - Saídas do mês
+                </div>
+            </div>
+
+            <!-- Saldo Disponível (Livre) -->
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between transition-colors">
+                <div class="absolute right-4 top-4 text-sky-100 bg-sky-50 dark:bg-sky-950/50 p-3 rounded-2xl">
+                    <i class="fa-solid fa-wallet text-2xl text-sky-600 dark:text-sky-400"></i>
+                </div>
+                <div>
+                    <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Saldo Livre</span>
+                    <h2 id="saldo-disponivel" class="text-2xl font-extrabold text-sky-600 dark:text-sky-400 mt-2">R$ 0,00</h2>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center text-xs text-sky-600 dark:text-sky-400 font-medium">
+                    <i class="fa-solid fa-check mr-1"></i> Não alocado em caixinhas
+                </div>
+            </div>
+
+            <!-- Receitas -->
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between transition-colors">
+                <div class="absolute right-4 top-4 text-emerald-100 bg-emerald-50 dark:bg-emerald-950/50 p-3 rounded-2xl">
+                    <i class="fa-solid fa-arrow-trend-up text-2xl text-emerald-600 dark:text-emerald-400"></i>
+                </div>
+                <div>
+                    <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Receitas (Mês)</span>
+                    <h2 id="total-receitas" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">R$ 0,00</h2>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                    <i class="fa-solid fa-arrow-up mr-1"></i> Entradas do mês
+                </div>
+            </div>
+
+            <!-- Despesas -->
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between transition-colors">
+                <div class="absolute right-4 top-4 text-rose-100 bg-rose-50 dark:bg-rose-950/50 p-3 rounded-2xl">
+                    <i class="fa-solid fa-arrow-trend-down text-2xl text-rose-600 dark:text-rose-400"></i>
+                </div>
+                <div>
+                    <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Despesas (Mês)</span>
+                    <h2 id="total-despesas" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-2">R$ 0,00</h2>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center text-xs text-rose-600 dark:text-rose-400 font-medium">
+                    <i class="fa-solid fa-arrow-down mr-1"></i> Saídas do mês
+                </div>
+            </div>
+        </section>
+
+        <!-- Grid Principal: Formulários + Lista / Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Coluna Esquerda: Formulários -->
+            <div class="space-y-6">
+                <!-- Nova Transação -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 transition-colors">
+                    <h3 id="titulo-form-transacao" class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-plus text-indigo-600 dark:text-indigo-400"></i> Nova Transação
+                    </h3>
+                    
+                    <form id="form-transacao" class="space-y-4">
+                        <input type="hidden" id="transacao-id-editando">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5" for="descricao">Descrição</label>
+                            <input type="text" id="descricao" required placeholder="Ex: Supermercado, Salário..." 
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-800 transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5" for="valor">Valor (R$)</label>
+                            <input type="number" id="valor" step="0.01" min="0.01" required placeholder="0,00" 
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-800 transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5" for="tipo">Tipo</label>
+                            <select id="tipo" onchange="atualizarCategoriasSelect()" 
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-800 transition">
+                                <option value="receita">Receita</option>
+                                <option value="despesa" selected>Despesa</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5" for="categoria">Categoria</label>
+                            <select id="categoria" onchange="verificarNovaCategoria(this)"
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-800 transition">
+                                <!-- Preenchido dinamicamente -->
+                            </select>
+                        </div>
+
+                        <!-- Campo extra oculto para digitar nova categoria -->
+                        <div id="grupo-nova-categoria" class="hidden">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5" for="nova-categoria-input">Nome da Nova Categoria</label>
+                            <input type="text" id="nova-categoria-input" placeholder="Digite o nome..." 
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5" for="data">Data</label>
+                            <input type="date" id="data" required 
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-800 transition">
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="submit" id="btn-salvar-transacao" class="flex-grow bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl shadow-sm transition duration-150 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Adicionar Transação
+                            </button>
+                            <button type="button" id="btn-cancelar-edicao" onclick="cancelarEdicaoTransacao()" class="hidden bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2.5 px-4 rounded-xl transition">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Adicionar Nova Caixinha com Data Limite Opcional -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 transition-colors">
+                    <h3 id="titulo-form-meta" class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-bullseye text-amber-500"></i> Criar Nova Caixinha (Meta)
+                    </h3>
+                    
+                    <form id="form-meta" class="space-y-4" onsubmit="salvarMeta(event)">
+                        <input type="hidden" id="meta-id-editando">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5" for="nome-meta">Nome da Caixinha</label>
+                            <input type="text" id="nome-meta" required placeholder="Ex: Celular Novo, Viagem..." 
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5" for="valor-meta">Valor Alvo (R$)</label>
+                            <input type="number" id="valor-meta" step="0.01" min="1" required placeholder="0,00" 
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5" for="data-meta">Data Limite Desejada <span class="text-slate-400 font-normal lowercase">(Opcional)</span></label>
+                            <input type="date" id="data-meta" 
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="submit" id="btn-salvar-meta" class="flex-grow bg-amber-500 hover:bg-amber-600 text-white font-medium py-2.5 px-4 rounded-xl shadow-sm transition duration-150 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-flag-checkered"></i> Criar Caixinha
+                            </button>
+                            <button type="button" id="btn-cancelar-edicao-meta" onclick="cancelarEdicaoMeta()" class="hidden bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2.5 px-4 rounded-xl transition">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Caixinhas, Transações e Gráficos -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Seção de Metas -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 transition-colors">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-vault text-amber-500"></i> Suas Caixinhas (Metas)
+                        </h3>
+                        <span id="contador-metas" class="text-xs bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 font-semibold px-2.5 py-1 rounded-full">0 caixinhas</span>
+                    </div>
+
+                    <div id="lista-metas" class="space-y-4 max-h-96 overflow-y-auto pr-1">
+                        <!-- Caixinhas injetadas dinamicamente -->
+                    </div>
+                </div>
+
+                <!-- Seção de Gráficos de Categoria -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 transition-colors">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-indigo-600 dark:text-indigo-400"></i> Despesas por Categoria (Mês)
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div class="h-64 relative flex items-center justify-center">
+                            <canvas id="graficoCategorias"></canvas>
+                        </div>
+                        <div id="lista-categorias-progresso" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                            <!-- Barras populadas por JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção de Gráfico de Evolução Diária -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 transition-colors">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-indigo-600 dark:text-indigo-400"></i> Evolução do Saldo no Mês
+                    </h3>
+                    <div class="h-64 relative">
+                        <canvas id="graficoEvolucao"></canvas>
+                    </div>
+                </div>
+
+                <!-- Histórico de Transações Recentes -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 transition-colors">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-list-ul text-indigo-600 dark:text-indigo-400"></i> Histórico do Mês
+                        </h3>
+                        <span id="contador-transacoes" class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold px-2.5 py-1 rounded-full">0 registros</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                    <th class="py-3 px-3">Descrição</th>
+                                    <th class="py-3 px-3">Categoria</th>
+                                    <th class="py-3 px-3">Data</th>
+                                    <th class="py-3 px-3 text-right">Valor</th>
+                                    <th class="py-3 px-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-transacoes" class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm">
+                                <!-- Linhas injetadas via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-auto py-4 text-center text-xs text-slate-400 dark:text-slate-500 transition-colors">
+        &copy; 2026 FinanSmart. Todos os direitos reservados.
+    </footer>
+
+    <!-- Script JavaScript com Sistema de Backup e Restauração -->
+    <script>
+        const categoriasPadrao = {
+            receita: ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outros'],
+            despesa: ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Educação', 'Contas', 'Outros']
+        };
+
+        let categoriasCustomizadas = {
+            receita: [],
+            despesa: []
+        };
+        try {
+            const dadosCats = localStorage.getItem('finansmart_categorias_custom');
+            if (dadosCats) categoriasCustomizadas = JSON.parse(dadosCats);
+        } catch (e) {
+            categoriasCustomizadas = { receita: [], despesa: [] };
+        }
+
+        function obterTodasCategorias(tipo) {
+            const padrao = categoriasPadrao[tipo] || [];
+            const custom = categoriasCustomizadas[tipo] || [];
+            return [...new Set([...padrao, ...custom])];
+        }
+
+        let transacoes = [];
+        try {
+            const dadosTransacoes = localStorage.getItem('finansmart_transacoes');
+            transacoes = dadosTransacoes ? JSON.parse(dadosTransacoes) : [];
+            if (!Array.isArray(transacoes)) transacoes = [];
+        } catch (e) {
+            transacoes = [];
+        }
+
+        let metas = [];
+        try {
+            const dadosMetas = localStorage.getItem('finansmart_metas');
+            metas = dadosMetas ? JSON.parse(dadosMetas) : [];
+            if (!Array.isArray(metas)) metas = [];
+        } catch (e) {
+            metas = [];
+        }
+
+        let meuGrafico = null;
+        let meuGraficoEvolucao = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarTemaSalvo();
+            
+            const hoje = new Date();
+            const ano = hoje.getFullYear();
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            document.getElementById('filtro-mes').value = `${ano}-${mes}`;
+
+            document.getElementById('data').valueAsDate = new Date();
+            atualizarCategoriasSelect();
+            renderizarApp();
+
+            document.getElementById('form-transacao').addEventListener('submit', salvarTransacao);
+        });
+
+        function alternarTema() {
+            const htmlElement = document.documentElement;
+            const iconeTema = document.getElementById('icone-tema');
+
+            if (htmlElement.classList.contains('dark')) {
+                htmlElement.classList.remove('dark');
+                localStorage.setItem('finansmart_tema', 'light');
+                iconeTema.className = "fa-solid fa-moon text-xs";
+            } else {
+                htmlElement.classList.add('dark');
+                localStorage.setItem('finansmart_tema', 'dark');
+                iconeTema.className = "fa-solid fa-sun text-xs";
+            }
+            renderizarGraficos();
+        }
+
+        function carregarTemaSalvo() {
+            const temaSalvo = localStorage.getItem('finansmart_tema');
+            const iconeTema = document.getElementById('icone-tema');
+            
+            if (temaSalvo === 'dark' || (!temaSalvo && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                iconeTema.className = "fa-solid fa-sun text-xs";
+            } else {
+                document.documentElement.classList.remove('dark');
+                iconeTema.className = "fa-solid fa-moon text-xs";
+            }
+        }
+
+        function mudarFiltroMes() {
+            renderizarApp();
+        }
+
+        function obterTransacoesFiltradas() {
+            const mesSelecionado = document.getElementById('filtro-mes').value;
+            if (!mesSelecionado) return transacoes;
+
+            return transacoes.filter(t => {
+                if (!t.data) return false;
+                return t.data.startsWith(mesSelecionado);
+            });
+        }
+
+        function atualizarCategoriasSelect() {
+            const tipoSelect = document.getElementById('tipo').value;
+            const categoriaSelect = document.getElementById('categoria');
+            const grupoNovaCat = document.getElementById('grupo-nova-categoria');
+            
+            grupoNovaCat.classList.add('hidden');
+            document.getElementById('nova-categoria-input').value = '';
+
+            categoriaSelect.innerHTML = '';
+            const listaCats = obterTodasCategorias(tipoSelect);
+
+            listaCats.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categoriaSelect.appendChild(option);
+            });
+
+            const optionNova = document.createElement('option');
+            optionNova.value = '__nova__';
+            optionNova.textContent = '+ Adicionar Nova Categoria...';
+            categoriaSelect.appendChild(optionNova);
+        }
+
+        function verificarNovaCategoria(selectEl) {
+            const grupoNovaCat = document.getElementById('grupo-nova-categoria');
+            if (selectEl.value === '__nova__') {
+                grupoNovaCat.classList.remove('hidden');
+                document.getElementById('nova-categoria-input').focus();
+            } else {
+                grupoNovaCat.classList.add('hidden');
+            }
+        }
+
+        // --- SISTEMA DE BACKUP (EXPORTAR / IMPORTAR) ---
+        function exportarBackup() {
+            const dadosBackup = {
+                transacoes: transacoes,
+                metas: metas,
+                categoriasCustomizadas: categoriasCustomizadas,
+                versao: "1.0",
+                dataExportacao: new Date().toISOString()
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dadosBackup, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            
+            const dataHoje = new Date().toISOString().split('T')[0];
+            downloadAnchor.setAttribute("download", `finansmart_backup_${dataHoje}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            mostrarToast('Backup exportado com sucesso!', 'success');
+        }
+
+        function importarBackup(event) {
+            const arquivo = event.target.files[0];
+            if (!arquivo) return;
+
+            const leitor = new FileReader();
+            leitor.onload = function(e) {
+                try {
+                    const conteudo = JSON.parse(e.target.result);
+                    
+                    if (!conteudo.transacoes || !conteudo.metas) {
+                        throw new Error('Arquivo de backup inválido.');
+                    }
+
+                    if (confirm('Deseja restaurar este backup? Isso substituirá os dados atuais salvos neste navegador.')) {
+                        transacoes = Array.isArray(conteudo.transacoes) ? conteudo.transacoes : [];
+                        metas = Array.isArray(conteudo.metas) ? conteudo.metas : [];
+                        if (conteudo.categoriasCustomizadas) {
+                            categoriasCustomizadas = conteudo.categoriasCustomizadas;
+                        }
+
+                        localStorage.setItem('finansmart_transacoes', JSON.stringify(transacoes));
+                        localStorage.setItem('finansmart_metas', JSON.stringify(metas));
+                        localStorage.setItem('finansmart_categorias_custom', JSON.stringify(categoriasCustomizadas));
+
+                        atualizarCategoriasSelect();
+                        renderizarApp();
+                        mostrarToast('Dados restaurados com sucesso!', 'success');
+                    }
+                } catch (erro) {
+                    mostrarToast('Erro ao ler arquivo de backup.', 'error');
+                }
+                event.target.value = ''; // Limpa o input file
+            };
+            leitor.readAsText(arquivo);
+        }
+
+        // --- MODAL DE GERENCIAMENTO DE CATEGORIAS ---
+        function abrirModalCategorias() {
+            renderizarListasModalCategorias();
+            document.getElementById('modal-categorias').classList.remove('hidden');
+        }
+
+        function fecharModalCategorias() {
+            document.getElementById('modal-categorias').classList.add('hidden');
+            atualizarCategoriasSelect();
+            renderizarApp();
+        }
+
+        function renderizarListasModalCategorias() {
+            const containerReceita = document.getElementById('lista-cats-custom-receita');
+            const containerDespesa = document.getElementById('lista-cats-custom-despesa');
+
+            containerReceita.innerHTML = '';
+            containerDespesa.innerHTML = '';
+
+            const customReceitas = categoriasCustomizadas.receita || [];
+            const customDespesas = categoriasCustomizadas.despesa || [];
+
+            if (customReceitas.length === 0) {
+                containerReceita.innerHTML = '<p class="text-xs text-slate-400 dark:text-slate-500 italic">Nenhuma receita personalizada.</p>';
+            } else {
+                customReceitas.forEach(cat => {
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between items-center bg-slate-50 dark:bg-slate-800/60 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700/60 text-sm";
+                    div.innerHTML = `
+                        <span class="font-medium text-slate-700 dark:text-slate-200">${escapeHtml(cat)}</span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="renomearCategoriaCustom('receita', '${escapeHtml(cat)}')" title="Renomear" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 transition">
+                                <i class="fa-solid fa-pen-to-square text-xs"></i>
+                            </button>
+                            <button onclick="excluirCategoriaCustom('receita', '${escapeHtml(cat)}')" title="Excluir" class="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 transition">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    `;
+                    containerReceita.appendChild(div);
+                });
+            }
+
+            if (customDespesas.length === 0) {
+                containerDespesa.innerHTML = '<p class="text-xs text-slate-400 dark:text-slate-500 italic">Nenhuma despesa personalizada.</p>';
+            } else {
+                customDespesas.forEach(cat => {
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between items-center bg-slate-50 dark:bg-slate-800/60 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700/60 text-sm";
+                    div.innerHTML = `
+                        <span class="font-medium text-slate-700 dark:text-slate-200">${escapeHtml(cat)}</span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="renomearCategoriaCustom('despesa', '${escapeHtml(cat)}')" title="Renomear" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 transition">
+                                <i class="fa-solid fa-pen-to-square text-xs"></i>
+                            </button>
+                            <button onclick="excluirCategoriaCustom('despesa', '${escapeHtml(cat)}')" title="Excluir" class="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 transition">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    `;
+                    containerDespesa.appendChild(div);
+                });
+            }
+        }
+
+        function renomearCategoriaCustom(tipo, nomeAntigo) {
+            const novoNome = prompt(`Digite o novo nome para a categoria "${nomeAntigo}":`, nomeAntigo);
+            if (!novoNome || novoNome.trim() === '' || novoNome.trim() === nomeAntigo) return;
+
+            const nomeLimpo = novoNome.trim();
+            if (categoriasPadrao[tipo].includes(nomeLimpo) || categoriasCustomizadas[tipo].includes(nomeLimpo)) {
+                mostrarToast('Já existe uma categoria com este nome!', 'error');
+                return;
+            }
+
+            const index = categoriasCustomizadas[tipo].indexOf(nomeAntigo);
+            if (index !== -1) {
+                categoriasCustomizadas[tipo][index] = nomeLimpo;
+                localStorage.setItem('finansmart_categorias_custom', JSON.stringify(categoriasCustomizadas));
+            }
+
+            transacoes.forEach(t => {
+                if (t.tipo === tipo && t.categoria === nomeAntigo) {
+                    t.categoria = nomeLimpo;
+                }
+            });
+            localStorage.setItem('finansmart_transacoes', JSON.stringify(transacoes));
+
+            renderizarListasModalCategorias();
+            mostrarToast('Categoria renomeada com sucesso!', 'success');
+        }
+
+        function excluirCategoriaCustom(tipo, nomeCat) {
+            if (confirm(`Deseja realmente apagar a categoria "${nomeCat}"?\nAs transações associadas a ela passarão a ser da categoria "Outros".`)) {
+                categoriasCustomizadas[tipo] = categoriasCustomizadas[tipo].filter(c => c !== nomeCat);
+                localStorage.setItem('finansmart_categorias_custom', JSON.stringify(categoriasCustomizadas));
+
+                transacoes.forEach(t => {
+                    if (t.tipo === tipo && t.categoria === nomeCat) {
+                        t.categoria = 'Outros';
+                    }
+                });
+                localStorage.setItem('finansmart_transacoes', JSON.stringify(transacoes));
+
+                renderizarListasModalCategorias();
+                mostrarToast('Categoria removida.', 'success');
+            }
+        }
+
+        // --- CAIXINHAS / METAS ---
+        function salvarMeta(e) {
+            e.preventDefault();
+            const idEditando = document.getElementById('meta-id-editando').value;
+            const nome = document.getElementById('nome-meta').value.trim();
+            const valorAlvo = parseFloat(document.getElementById('valor-meta').value);
+            const dataLimite = document.getElementById('data-meta').value;
+
+            if (!nome || isNaN(valorAlvo) || valorAlvo <= 0) {
+                mostrarToast('Preencha os dados da caixinha corretamente!', 'error');
+                return;
+            }
+
+            if (idEditando) {
+                const meta = metas.find(m => m.id == idEditando);
+                if (meta) {
+                    meta.nome = nome;
+                    meta.valorAlvo = valorAlvo;
+                    meta.dataLimite = dataLimite || null;
+                }
+                mostrarToast('Caixinha atualizada com sucesso!', 'success');
+            } else {
+                const novaMeta = {
+                    id: Date.now(),
+                    nome,
+                    valorAlvo,
+                    valorGuardado: 0,
+                    dataLimite: dataLimite || null
+                };
+                metas.push(novaMeta);
+                mostrarToast('Caixinha criada com sucesso!', 'success');
+            }
+
+            cancelarEdicaoMeta();
+            salvarEMetaAtualizar();
+        }
+
+        function editarMeta(id) {
+            const meta = metas.find(m => m.id === id);
+            if (!meta) return;
+
+            document.getElementById('meta-id-editando').value = meta.id;
+            document.getElementById('nome-meta').value = meta.nome;
+            document.getElementById('valor-meta').value = meta.valorAlvo;
+            document.getElementById('data-meta').value = meta.dataLimite || '';
+
+            document.getElementById('titulo-form-meta').innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-500"></i> Editar Caixinha`;
+            document.getElementById('btn-salvar-meta').innerHTML = `<i class="fa-solid fa-check"></i> Salvar Alterações`;
+            document.getElementById('btn-cancelar-edicao-meta').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelarEdicaoMeta() {
+            document.getElementById('meta-id-editando').value = '';
+            document.getElementById('form-meta').reset();
+            document.getElementById('titulo-form-meta').innerHTML = `<i class="fa-solid fa-bullseye text-amber-500"></i> Criar Nova Caixinha (Meta)`;
+            document.getElementById('btn-salvar-meta').innerHTML = `<i class="fa-solid fa-flag-checkered"></i> Criar Caixinha`;
+            document.getElementById('btn-cancelar-edicao-meta').classList.add('hidden');
+        }
+
+        function depositarNaMeta(idMeta) {
+            const saldoLivre = calcularSaldoLivre();
+
+            if (saldoLivre <= 0) {
+                mostrarToast('Você não tem saldo livre disponível para guardar!', 'error');
+                return;
+            }
+
+            const valorStr = prompt(`Quanto você quer depositar nesta caixinha?\nDisponível: R$ ${saldoLivre.toFixed(2)}`);
+            if (valorStr === null || valorStr.trim() === '') return;
+
+            const valorDeposito = parseFloat(valorStr.replace(',', '.'));
+
+            if (isNaN(valorDeposito) || valorDeposito <= 0) {
+                mostrarToast('Valor inválido digitado.', 'error');
+                return;
+            }
+
+            if (valorDeposito > saldoLivre) {
+                mostrarToast('O valor excede o seu saldo livre disponível!', 'error');
+                return;
+            }
+
+            const meta = metas.find(m => m.id === idMeta);
+            if (meta) {
+                meta.valorGuardado = (parseFloat(meta.valorGuardado) || 0) + valorDeposito;
+                salvarEMetaAtualizar();
+                mostrarToast('Depositado com sucesso!', 'success');
+            }
+        }
+
+        function retirarDaMeta(idMeta) {
+            const meta = metas.find(m => m.id === idMeta);
+            const guardadoAtual = parseFloat(meta.valorGuardado) || 0;
+
+            if (!meta || guardadoAtual <= 0) {
+                mostrarToast('Esta caixinha não tem saldo guardado para retirar.', 'error');
+                return;
+            }
+
+            const valorStr = prompt(`Quanto você quer retirar desta caixinha?\nGuardado: R$ ${guardadoAtual.toFixed(2)}`);
+            if (valorStr === null || valorStr.trim() === '') return;
+
+            const valorRetirada = parseFloat(valorStr.replace(',', '.'));
+
+            if (isNaN(valorRetirada) || valorRetirada <= 0) {
+                mostrarToast('Valor inválido digitado.', 'error');
+                return;
+            }
+
+            if (valorRetirada > guardadoAtual) {
+                mostrarToast('Você não pode retirar mais do que tem guardado nesta caixinha!', 'error');
+                return;
+            }
+
+            meta.valorGuardado = guardadoAtual - valorRetirada;
+            salvarEMetaAtualizar();
+            mostrarToast('Retirado da caixinha com sucesso!', 'success');
+        }
+
+        function excluirMeta(id) {
+            if (confirm('Tem certeza que deseja apagar esta caixinha? O dinheiro guardado nela voltará para o seu saldo livre.')) {
+                metas = metas.filter(m => m.id !== id);
+                salvarEMetaAtualizar();
+                mostrarToast('Caixinha removida.', 'success');
+            }
+        }
+
+        function salvarEMetaAtualizar() {
+            localStorage.setItem('finansmart_metas', JSON.stringify(metas));
+            renderizarApp();
+        }
+
+        // --- TRANSAÇÕES ---
+        function salvarTransacao(e) {
+            e.preventDefault();
+
+            const idEditando = document.getElementById('transacao-id-editando').value;
+            const descricao = document.getElementById('descricao').value.trim();
+            const valor = parseFloat(document.getElementById('valor').value);
+            const tipo = document.getElementById('tipo').value;
+            let categoria = document.getElementById('categoria').value;
+            const data = document.getElementById('data').value;
+
+            if (categoria === '__nova__') {
+                const novaCatNome = document.getElementById('nova-categoria-input').value.trim();
+                if (!novaCatNome) {
+                    mostrarToast('Digite o nome da nova categoria!', 'error');
+                    return;
+                }
+                categoria = novaCatNome;
+                if (!categoriasCustomizadas[tipo].includes(categoria) && !categoriasPadrao[tipo].includes(categoria)) {
+                    categoriasCustomizadas[tipo].push(categoria);
+                    localStorage.setItem('finansmart_categorias_custom', JSON.stringify(categoriasCustomizadas));
+                }
+            }
+
+            if (!descricao || isNaN(valor) || valor <= 0 || !data || !categoria) {
+                mostrarToast('Preencha todos os campos corretamente!', 'error');
+                return;
+            }
+
+            if (idEditando) {
+                const t = transacoes.find(tr => tr.id == idEditando);
+                if (t) {
+                    t.descricao = descricao;
+                    t.valor = valor;
+                    t.tipo = tipo;
+                    t.categoria = categoria;
+                    t.data = data;
+                }
+                mostrarToast('Transação atualizada com sucesso!', 'success');
+            } else {
+                const novaTransacao = { id: Date.now(), descricao, valor, tipo, categoria, data };
+                transacoes.unshift(novaTransacao);
+                mostrarToast('Transação adicionada com sucesso!', 'success');
+            }
+
+            cancelarEdicaoTransacao();
+            salvarEAtualizar();
+        }
+
+        function editarTransacao(id) {
+            const t = transacoes.find(tr => tr.id === id);
+            if (!t) return;
+
+            document.getElementById('transacao-id-editando').value = t.id;
+            document.getElementById('descricao').value = t.descricao;
+            document.getElementById('valor').value = t.valor;
+            document.getElementById('tipo').value = t.tipo;
+            atualizarCategoriasSelect();
+
+            document.getElementById('categoria').value = t.categoria;
+            if (document.getElementById('categoria').value !== t.categoria) {
+                const option = document.createElement('option');
+                option.value = t.categoria;
+                option.textContent = t.categoria;
+                document.getElementById('categoria').insertBefore(option, document.getElementById('categoria').firstChild);
+                document.getElementById('categoria').value = t.categoria;
+            }
+
+            document.getElementById('data').value = t.data;
+
+            document.getElementById('titulo-form-transacao').innerHTML = `<i class="fa-solid fa-pen-to-square text-indigo-600 dark:text-indigo-400"></i> Editar Transação`;
+            document.getElementById('btn-salvar-transacao').innerHTML = `<i class="fa-solid fa-check"></i> Salvar Alterações`;
+            document.getElementById('btn-cancelar-edicao').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelarEdicaoTransacao() {
+            document.getElementById('transacao-id-editando').value = '';
+            document.getElementById('form-transacao').reset();
+            document.getElementById('data').valueAsDate = new Date();
+            atualizarCategoriasSelect();
+
+            document.getElementById('titulo-form-transacao').innerHTML = `<i class="fa-solid fa-circle-plus text-indigo-600 dark:text-indigo-400"></i> Nova Transação`;
+            document.getElementById('btn-salvar-transacao').innerHTML = `<i class="fa-solid fa-plus"></i> Adicionar Transação`;
+            document.getElementById('btn-cancelar-edicao').classList.add('hidden');
+        }
+
+        function excluirTransacao(id) {
+            transacoes = transacoes.filter(t => t.id !== id);
+            salvarEAtualizar();
+            mostrarToast('Transação removida.', 'success');
+        }
+
+        function salvarEAtualizar() {
+            localStorage.setItem('finansmart_transacoes', JSON.stringify(transacoes));
+            renderizarApp();
+        }
+
+        function limparDados() {
+            if (transacoes.length === 0 && metas.length === 0) {
+                mostrarToast('Não há dados para limpar.', 'error');
+                return;
+            }
+            if (confirm('Tem certeza que deseja apagar todas as transações e caixinhas?')) {
+                transacoes = [];
+                metas = [];
+                localStorage.removeItem('finansmart_transacoes');
+                localStorage.removeItem('finansmart_metas');
+                renderizarApp();
+                mostrarToast('Todos os registros foram apagados.', 'success');
+            }
+        }
+
+        function calcularSaldoLivre() {
+            let totalReceitasGerais = 0;
+            let totalDespesasGerais = 0;
+            transacoes.forEach(t => {
+                const val = parseFloat(t.valor) || 0;
+                if (t.tipo === 'receita') totalReceitasGerais += val;
+                else if (t.tipo === 'despesa') totalDespesasGerais += val;
+            });
+            const saldoGeralTotal = totalReceitasGerais - totalDespesasGerais;
+
+            let totalGuardadoNasMetas = 0;
+            metas.forEach(m => totalGuardadoNasMetas += (parseFloat(m.valorGuardado) || 0));
+
+            return saldoGeralTotal - totalGuardadoNasMetas;
+        }
+
+        function renderizarApp() {
+            renderizarResumo();
+            renderizarMetas();
+            renderizarTabela();
+            renderizarGraficos();
+        }
+
+        function renderizarResumo() {
+            const transacoesFiltradas = obterTransacoesFiltradas();
+            let totalReceitas = 0;
+            let totalDespesas = 0;
+
+            transacoesFiltradas.forEach(t => {
+                const val = parseFloat(t.valor) || 0;
+                if (t.tipo === 'receita') totalReceitas += val;
+                else if (t.tipo === 'despesa') totalDespesas += val;
+            });
+
+            const saldoGeralMes = totalReceitas - totalDespesas;
+            const saldoLivre = calcularSaldoLivre();
+
+            document.getElementById('total-receitas').textContent = formatarMoeda(totalReceitas);
+            document.getElementById('total-despesas').textContent = formatarMoeda(totalDespesas);
+            
+            const elSaldo = document.getElementById('saldo-total');
+            elSaldo.textContent = formatarMoeda(saldoGeralMes);
+            elSaldo.className = saldoGeralMes < 0 
+                ? "text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-2" 
+                : "text-2xl font-extrabold text-slate-900 dark:text-white mt-2";
+
+            const elLivre = document.getElementById('saldo-disponivel');
+            elLivre.textContent = formatarMoeda(saldoLivre);
+            elLivre.className = saldoLivre < 0 
+                ? "text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-2" 
+                : "text-2xl font-extrabold text-sky-600 dark:text-sky-400 mt-2";
+        }
+
+        function renderizarMetas() {
+            const containerMetas = document.getElementById('lista-metas');
+            const contadorMetas = document.getElementById('contador-metas');
+            containerMetas.innerHTML = '';
+
+            contadorMetas.textContent = `${metas.length} ${metas.length === 1 ? 'caixinha' : 'caixinhas'}`;
+
+            if (metas.length === 0) {
+                containerMetas.innerHTML = '<p class="text-xs text-slate-400 dark:text-slate-500 text-center py-6">Nenhuma caixinha criada ainda. Crie uma no formulário ao lado.</p>';
+                return;
+            }
+
+            metas.forEach(meta => {
+                const alvo = parseFloat(meta.valorAlvo) || 1;
+                const guardado = parseFloat(meta.valorGuardado) || 0;
+                let porcentagem = (guardado / alvo) * 100;
+                if (porcentagem > 100) porcentagem = 100;
+
+                let infoPrazoHtml = '';
+                if (meta.dataLimite) {
+                    const dataHoje = new Date();
+                    dataHoje.setHours(0,0,0,0);
+                    const dataAlvoObj = new Date(meta.dataLimite + 'T00:00:00');
+                    
+                    const diffTempo = dataAlvoObj - dataHoje;
+                    const diffDias = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
+
+                    if (diffDias < 0) {
+                        infoPrazoHtml = `<span class="text-rose-500 font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Vencido (${formatarData(meta.dataLimite)})</span>`;
+                    } else if (diffDias === 0) {
+                        infoPrazoHtml = `<span class="text-amber-500 font-semibold"><i class="fa-solid fa-clock mr-1"></i> Vence hoje!</span>`;
+                    } else {
+                        infoPrazoHtml = `<span class="text-slate-400"><i class="fa-regular fa-calendar mr-1"></i> ${diffDias} dias restantes</span>`;
+                    }
+                } else {
+                    infoPrazoHtml = `<span class="text-slate-400">Sem prazo definido</span>`;
+                }
+
+                const div = document.createElement('div');
+                div.className = "bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/60 space-y-3";
+                
+                div.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <span class="font-bold text-sm text-slate-800 dark:text-slate-100 break-words max-w-full sm:max-w-[60%] flex items-center gap-1.5">
+                            <i class="fa-solid fa-vault text-amber-500 shrink-0"></i> 
+                            <span>${escapeHtml(meta.nome)}</span>
+                        </span>
+                        <div class="flex items-center justify-between w-full sm:w-auto gap-3">
+                            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">${formatarMoeda(guardado)} / ${formatarMoeda(alvo)}</span>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button onclick="editarMeta(${meta.id})" title="Editar Caixinha" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition p-1.5 rounded">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <button onclick="excluirMeta(${meta.id})" title="Excluir Caixinha" class="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition p-1.5 rounded">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                        <div class="bg-amber-500 h-2.5 rounded-full transition-all duration-500" style="width: ${porcentagem.toFixed(1)}%"></div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs pt-1 gap-2">
+                        <div class="flex items-center gap-3">
+                            <span class="font-semibold text-amber-600 dark:text-amber-400">${porcentagem.toFixed(1)}% alcançado</span>
+                            <span class="text-slate-300 dark:text-slate-600">|</span>
+                            ${infoPrazoHtml}
+                        </div>
+                        <div class="flex gap-2 self-end sm:self-auto">
+                            <button onclick="retirarDaMeta(${meta.id})" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2.5 py-1 rounded-lg font-medium transition">
+                                <i class="fa-solid fa-minus mr-1"></i> Retirar
+                            </button>
+                            <button onclick="depositarNaMeta(${meta.id})" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-lg font-medium transition shadow-sm">
+                                <i class="fa-solid fa-plus mr-1"></i> Depositar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                containerMetas.appendChild(div);
+            });
+        }
+
+        function renderizarTabela() {
+            const transacoesFiltradas = obterTransacoesFiltradas();
+            const tbody = document.getElementById('tabela-transacoes');
+            const contador = document.getElementById('contador-transacoes');
+            tbody.innerHTML = '';
+
+            contador.textContent = `${transacoesFiltradas.length} ${transacoesFiltradas.length === 1 ? 'registro' : 'registros'}`;
+
+            if (transacoesFiltradas.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-slate-400 dark:text-slate-500">
+                            <i class="fa-solid fa-folder-open text-3xl mb-2 block text-slate-300 dark:text-slate-700"></i>
+                            Nenhuma transação neste mês.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            transacoesFiltradas.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition";
+
+                const val = parseFloat(t.valor) || 0;
+                const corValor = t.tipo === 'receita' ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-800 dark:text-slate-200 font-semibold';
+                const sinal = t.tipo === 'receita' ? '+ ' : '- ';
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-3 font-medium text-slate-800 dark:text-slate-200">${escapeHtml(t.descricao)}</td>
+                    <td class="py-3.5 px-3">
+                        <span class="inline-block bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium px-2.5 py-1 rounded-lg">
+                            ${escapeHtml(t.categoria)}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-3 text-slate-500 dark:text-slate-400 text-sm">${formatarData(t.data)}</td>
+                    <td class="py-3.5 px-3 text-right ${corValor}">${sinal}${formatarMoeda(val)}</td>
+                    <td class="py-3.5 px-3 text-center flex items-center justify-center gap-1">
+                        <button onclick="editarTransacao(${t.id})" title="Editar" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40">
+                            <i class="fa-solid fa-pen-to-square text-sm"></i>
+                        </button>
+                        <button onclick="excluirTransacao(${t.id})" title="Excluir" class="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40">
+                            <i class="fa-solid fa-trash-can text-sm"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderizarGraficos() {
+            const transacoesFiltradas = obterTransacoesFiltradas();
+            const despesas = transacoesFiltradas.filter(t => t.tipo === 'despesa');
+            
+            const todasCategoriasDespesa = obterTodasCategorias('despesa');
+            const gastosPorCat = {};
+            todasCategoriasDespesa.forEach(cat => gastosPorCat[cat] = 0);
+            
+            let totalDespesasGerais = 0;
+            despesas.forEach(d => {
+                const val = parseFloat(d.valor) || 0;
+                if (gastosPorCat[d.categoria] !== undefined) {
+                    gastosPorCat[d.categoria] += val;
+                } else {
+                    gastosPorCat[d.categoria] = val;
+                }
+                totalDespesasGerais += val;
+            });
+
+            const labels = Object.keys(gastosPorCat).filter(cat => gastosPorCat[cat] > 0);
+            const dados = labels.map(cat => gastosPorCat[cat]);
+            const coresPaleta = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#f43f5e', '#14b8a6', '#f97316', '#64748b'];
+
+            const ctx = document.getElementById('graficoCategorias').getContext('2d');
+            if (meuGrafico) meuGrafico.destroy();
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const corBordaGrafico = isDark ? '#1e293b' : '#ffffff';
+            const corTextoLegenda = isDark ? '#94a3b8' : '#334155';
+
+            if (dados.length === 0) {
+                meuGrafico = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sem despesas'],
+                        datasets: [{ data: [1], backgroundColor: [isDark ? '#334155' : '#e2e8f0'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            } else {
+                meuGrafico = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{ data: dados, backgroundColor: coresPaleta.slice(0, labels.length), borderWidth: 2, borderColor: corBordaGrafico }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11, family: 'Inter' }, color: corTextoLegenda } } },
+                        cutout: '70%'
+                    }
+                });
+            }
+
+            const containerProgresso = document.getElementById('lista-categorias-progresso');
+            containerProgresso.innerHTML = '';
+
+            if (despesas.length === 0) {
+                containerProgresso.innerHTML = '<p class="text-xs text-slate-400 dark:text-slate-500 text-center py-6">Sem dados de despesa para exibir.</p>';
+            } else {
+                labels.forEach((cat, index) => {
+                    const valorCat = gastosPorCat[cat];
+                    const porcentagem = totalDespesasGerais > 0 ? ((valorCat / totalDespesasGerais) * 100).toFixed(1) : 0;
+                    const corBarra = coresPaleta[index % coresPaleta.length];
+
+                    const div = document.createElement('div');
+                    div.className = "space-y-1";
+                    div.innerHTML = `
+                        <div class="flex justify-between text-xs font-medium text-slate-600 dark:text-slate-400">
+                            <span>${cat}</span>
+                            <span>${formatarMoeda(valorCat)} (${porcentagem}%)</span>
+                        </div>
+                        <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <div class="h-2 rounded-full transition-all duration-500" style="width: ${porcentagem}%; background-color: ${corBarra};"></div>
+                        </div>
+                    `;
+                    containerProgresso.appendChild(div);
+                });
+            }
+
+            renderizarGraficoEvolucao(transacoesFiltradas, isDark, corTextoLegenda);
+        }
+
+        function renderizarGraficoEvolucao(transacoesFiltradas, isDark, corTextoLegenda) {
+            const ctxEvolucao = document.getElementById('graficoEvolucao').getContext('2d');
+            if (meuGraficoEvolucao) meuGraficoEvolucao.destroy();
+
+            const transacoesOrdenadas = [...transacoesFiltradas].sort((a, b) => new Date(a.data) - new Date(b.data));
+            const diasUnicos = [...new Set(transacoesOrdenadas.map(t => t.data))];
+            let saldoAcumulado = 0;
+            const dadosEvolucao = [];
+            const labelsDias = diasUnicos.map(dataStr => formatarData(dataStr));
+
+            diasUnicos.forEach(dia => {
+                const transDoDia = transacoesOrdenadas.filter(t => t.data === dia);
+                transDoDia.forEach(t => {
+                    const val = parseFloat(t.valor) || 0;
+                    if (t.tipo === 'receita') saldoAcumulado += val;
+                    else if (t.tipo === 'despesa') saldoAcumulado -= val;
+                });
+                dadosEvolucao.push(saldoAcumulado);
+            });
+
+            if (dadosEvolucao.length === 0) {
+                meuGraficoEvolucao = new Chart(ctxEvolucao, {
+                    type: 'line',
+                    data: {
+                        labels: ['Início do mês', 'Fim do mês'],
+                        datasets: [{
+                            label: 'Saldo Acumulado',
+                            data: [0, 0],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { ticks: { color: corTextoLegenda }, grid: { color: isDark ? '#1e293b' : '#f1f5f9' } },
+                            x: { ticks: { color: corTextoLegenda }, grid: { display: false } }
+                        }
+                    }
+                });
+            } else {
+                meuGraficoEvolucao = new Chart(ctxEvolucao, {
+                    type: 'line',
+                    data: {
+                        labels: labelsDias,
+                        datasets: [{
+                            label: 'Saldo Acumulado (R$)',
+                            data: dadosEvolucao,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#6366f1',
+                            pointRadius: 4,
+                            fill: true,
+                            tension: 0.2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return ` Saldo: ${formatarMoeda(context.raw)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { ticks: { color: corTextoLegenda, callback: value => 'R$ ' + value }, grid: { color: isDark ? '#1e293b' : '#f1f5f9' } },
+                            x: { ticks: { color: corTextoLegenda }, grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function formatarMoeda(valor) {
+            const num = parseFloat(valor) || 0;
+            return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function formatarData(dataStr) {
+            if (!dataStr) return '';
+            const partes = dataStr.split('-');
+            if (partes.length !== 3) return dataStr;
+            return `${partes[2]}/${partes[1]}`;
+        }
+
+        function escapeHtml(texto) {
+            const div = document.createElement('div');
+            div.textContent = texto || '';
+            return div.innerHTML;
+        }
+
+        function mostrarToast(mensagem, tipo = 'success') {
+            const toast = document.getElementById('custom-toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = mensagem;
+            toastIcon.className = tipo === 'success' 
+                ? "fa-solid fa-circle-check text-emerald-400 text-lg" 
+                : "fa-solid fa-circle-exclamation text-rose-400 text-lg";
+
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.remove('translate-y-10', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
